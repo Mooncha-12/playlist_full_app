@@ -1,7 +1,6 @@
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
-
 from sqlalchemy.orm import Session
-
 from app import models
 from sql_app import shemas
 
@@ -31,21 +30,27 @@ def create_playlist(db: Session, playlist: models.PlaylistCreate):
 def get_song(db: Session, song_id: int):
     return db.query(shemas.Song).filter(shemas.Song.id == song_id).first()
 
+def get_song_for_delete(db: Session, name: str):
+    return db.query(shemas.Song).filter(shemas.Song.name == name).first()
+
 
 def create_playlist_songs(db: Session, song: models.SongCreate):
-    playlist = db.query(shemas.Playlist).first()
-    db_song = shemas.Song(**song.dict(), playlist_id=playlist.id)
-    db.add(db_song)
-    db.commit()
-    db.refresh(db_song)
-    return db_song
-
+    try:
+        playlist = db.query(shemas.Playlist).first()
+        db_song = shemas.Song(**song.dict(), playlist_id=playlist.id)
+        db.add(db_song)
+        db.commit()
+        db.refresh(db_song)
+        return db_song
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Song with this name already exists")
 def delete_playlist_by_id(db: Session, playlist: models.Playlist):
     db.delete(playlist)
     db.commit()
 
 
-def delete_song_by_id(db: Session, song: models.Song):
+def delete_song_by_name(db: Session, song: models.Song):
     db.delete(song)
     db.commit()
 

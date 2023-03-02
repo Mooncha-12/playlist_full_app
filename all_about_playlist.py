@@ -25,6 +25,7 @@ class DoublyLinkedList:
         self.head = None
         self.tail = None
         self.length = 0
+        self.current_node_for_doublylinkedlist = None
 
 
     def addsong(self, song):
@@ -43,7 +44,25 @@ class DoublyLinkedList:
 
         self.length += 1
 
+    def find_node_by_song(self, song):
+        current_node = self.head
+        while current_node is not None:
+            if current_node.data == song:
+                return current_node
+            current_node = current_node.next_node
+        return None
 
+    def delete_node(self, node):
+        new_node = Node(node)
+        if self.head == new_node:
+            self.head = new_node.next
+        if self.tail == new_node:
+            self.tail = new_node.previous
+        if new_node.previous:
+            new_node.previous.next = new_node.next
+        if new_node.next:
+            new_node.next.previous = new_node.previous
+        self.length -= 1
 
 class Operation:
     def __init__(self):
@@ -51,6 +70,7 @@ class Operation:
         self.current_node = None
         self.paused = True
         self.current_duration = 0
+        self.current_song = None
         self.const_checking = True
         self.count = 0
         self.event = threading.Event()
@@ -63,6 +83,7 @@ class Operation:
 
     def set_current_node(self, node):
         self.current_node = node
+        self.current_song = node.song
 
     def run(self):
         if self.current_node is None:
@@ -84,6 +105,7 @@ class Operation:
                 if not self.paused:
                     self.current_node = self.current_node.next
                     self.current_duration = 0
+                    self.current_song = self.current_node.song
                 if self.count == 1 and self.const_checking:
                     self.paused = False
 

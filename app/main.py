@@ -6,13 +6,21 @@ from sqlalchemy.orm import Session
 from app import crud, models
 from sql_app import shemas
 from sql_app.database import SessionLocal, engine
-from all_about_playlist import Operation, Song
+from all_about_playlist import Operation, Song, DoublyLinkedList
+
 
 operation = Operation()
+
+def get_player():
+    player = DoublyLinkedList()
+    return player
 
 shemas.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+#Для проверки удаления песни во время проигрывания
+check = True
 
 
 # Dependency
@@ -39,7 +47,7 @@ def read_playlist(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 
 
 @app.get("/playlists/{playlist_id}", response_model=models.Playlist)
-def read_playlist(playlist_id: int, db: Session = Depends(get_db)):
+def read_playlist_by_id(playlist_id: int, db: Session = Depends(get_db)):
     db_playlist = crud.get_playlist(db, playlist_id=playlist_id)
     if db_playlist is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -50,10 +58,14 @@ def read_playlist(playlist_id: int, db: Session = Depends(get_db)):
 def create_song_for_playlist(
     song: models.SongCreate, db: Session = Depends(get_db)
 ):
-    def add_song_for_doublylinkedlist(new_son: models.SongBase):
-        s = Song(new_son.name, new_son.duration)
+    def add_song_for_doublylinkedlist(new_song: models.SongBase):
+        s = Song(new_song.name, new_song.duration)
         operation.add_song(s)
-    return crud.create_playlist_songs(db=db, song=song)
+        operation.set_current_node(operation.playlist.head)
+
+    new_song = crud.create_playlist_songs(db=db, song=song)
+    add_song_for_doublylinkedlist(new_song)
+    return new_song
 
 
 
@@ -84,16 +96,50 @@ def delete_playlist(playlist_id: int, db: Session = Depends(get_db)):
     return {"message": "Playlist deleted successfully"}
 
 
-@app.delete("/songs/{song_id}")
-def delete_song(song_id: int, db: Session = Depends(get_db)):
-    song = crud.get_song(db, song_id=song_id)
+@app.delete("/songs/{song_name}")
+def delete_song(name: str, db: Session = Depends(get_db), player: DoublyLinkedList = Depends(get_player)):
+    global check
+    song = crud.get_song_for_delete(db, name=name)
     if song is None:
         raise HTTPException(status_code=404, detail="Song not found")
-    crud.delete_song_by_id(db, song=song)
+
+    if not check and operation.current_song.name == name:
+        check = True
+        raise HTTPException(status_code=400, detail="Cannot delete song while it is being played")
+
+    player.delete_node(song)
+    crud.delete_song_by_name(db, song=song)
     return {"message": "Song deleted successfully"}
 
 
 @app.post("/play")
 def play():
+    global check
+    if operation.playlist.length == 0:
+        return {"status": "error", "message": "Playlist is empty."}
+
     operation.play()
+    check = False
     return {"status": "playing"}
+@app.post("/pause")
+def pause():
+    if operation.playlist.length == 0:
+        return {"status": "error", "message": "Playlist is empty."}
+
+    operation.pause()
+    return {"status": "pause"}
+
+@app.post("/next")
+def next_song():
+    if operation.current_node is None:
+        return {"status": "error", "message": "Pointer to the next element is None"}
+    operation.next_song()
+    return {"status": "the following song is playing"}
+
+@app.post("/previous")
+def previous_song():
+    if operation.current_node is None:
+        return {"status": "error", "message": "Pointer to the previous element is None"}
+    operation.previous_song()
+    return {"status": "the previous song is playing"}
+
