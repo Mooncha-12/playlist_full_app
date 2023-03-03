@@ -1,6 +1,12 @@
  Playlist_module
+ 
+ 
  all_about_playlist
+ 
+ 
  Класс Song
+ 
+ 
 Класс `Song` представляет собой объект песни, у которого есть два атрибута: `name` и `duration`. 
 
 Методы:
