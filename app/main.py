@@ -55,9 +55,7 @@ def read_playlist_by_id(playlist_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/songs/", response_model=models.Song)
-def create_song_for_playlist(
-    song: models.SongCreate, db: Session = Depends(get_db)
-):
+def create_song_for_playlist(song: models.SongCreate, db: Session = Depends(get_db)):
     def add_song_for_doublylinkedlist(new_song: models.SongBase):
         s = Song(new_song.name, new_song.duration)
         operation.add_song(s)
@@ -69,17 +67,15 @@ def create_song_for_playlist(
 
 
 
-
-
 @app.get("/songs/{song_id}", response_model=models.Song)
-def read_song(song_id: int, db: Session = Depends(get_db)):
-    db_song = crud.get_song(db, song_id=song_id)
+def read_song_by_id(song_id: int, db: Session = Depends(get_db)):
+    db_song = crud.get_song_by_id(db, song_id=song_id)
     if db_song is None:
         raise HTTPException(status_code=404, detail="Song not found")
     return db_song
 
 
-@app.put("/playlist/{song_id}", response_model=models.Song)
+@app.put("/playlists/{song_id}", response_model=models.Song)
 def update_song_in_playlist(song_id: int, song: models.SongUpdate, db: Session = Depends(get_db)):
     db_song = crud.update_song(db, song_id, song)
     if db_song is None:

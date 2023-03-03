@@ -27,7 +27,7 @@ def create_playlist(db: Session, playlist: models.PlaylistCreate):
     return db_playlist
 
 
-def get_song(db: Session, song_id: int):
+def get_song_by_id(db: Session, song_id: int):
     return db.query(shemas.Song).filter(shemas.Song.id == song_id).first()
 
 def get_song_for_delete(db: Session, name: str):
