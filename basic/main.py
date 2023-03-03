@@ -3,7 +3,7 @@ from typing import List
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
-from app import crud, models
+from basic import crud, models
 from sql_app import shemas
 from sql_app.database import SessionLocal, engine
 from all_about_playlist import Operation, Song, DoublyLinkedList

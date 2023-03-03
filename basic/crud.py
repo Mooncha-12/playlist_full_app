@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from app import models
+from basic import models
 from sql_app import shemas
 
 def get_playlist(db: Session, playlist_id: int):
