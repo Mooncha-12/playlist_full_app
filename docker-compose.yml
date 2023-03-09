@@ -1,0 +1,18 @@
+version: '3.7'
+
+services:
+  app:
+    build: .
+    command: uvicorn base.main:app --reload
+    container_name: app
+    image: app
+    volumes:
+      - db:/app/data/
+    env_file:
+      - ./env
+    ports:
+      - 8000:80
+    restart: on-failure
+
+volumes:
+  db:
